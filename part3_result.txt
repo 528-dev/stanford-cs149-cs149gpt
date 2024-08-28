@@ -1,0 +1,54 @@
+
+Compiling code into a PyTorch module...
+
+
+Running Part 3 Test: Fused Attention
+
+-----RUNNING REFERENCE IMPLEMENTATION-----
+
+manual attention == pytorch attention True
+Manual Execution Time:  0.02233600616455078 
+
+-------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+                           Name    Self CPU %      Self CPU   CPU total %     CPU total  CPU time avg       CPU Mem  Self CPU Mem    # of Calls  
+-------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+                    aten::empty         0.13%      30.000us         0.13%      30.000us      10.000us       1.03 Mb       1.03 Mb             3  
+                    aten::clone         2.42%     540.000us         3.88%     867.000us     433.500us       1.00 Mb           0 b             2  
+    REFERENCE - FUSED ATTENTION        86.22%      19.277ms        99.85%      22.323ms      22.323ms     544.00 Kb      -1.00 Mb             1  
+                    aten::zeros         2.22%     496.000us         6.29%       1.407ms     703.500us     544.00 Kb           0 b             2  
+                model_inference         0.15%      34.000us       100.00%      22.357ms      22.357ms     512.00 Kb     -32.00 Kb             1  
+                  aten::flatten         3.14%     703.000us         6.40%       1.431ms       2.773us     512.00 Kb           0 b           516  
+               aten::empty_like         0.05%      11.000us         0.11%      24.000us      24.000us     512.00 Kb           0 b             1  
+            aten::empty_strided         0.03%       6.000us         0.03%       6.000us       6.000us     512.00 Kb     512.00 Kb             1  
+                    aten::zero_         2.39%     534.000us         4.00%     894.000us     447.000us           0 b           0 b             2  
+                    aten::fill_         1.61%     360.000us         1.61%     360.000us     360.000us           0 b           0 b             1  
+-------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+Self CPU time total: 22.357ms
+
+REFERENCE - FUSED ATTENTION statistics
+cpu time:  22.323ms
+mem usage:  557056 bytes
+-----RUNNING STUDENT IMPLEMENTATION-----
+
+manual attention == pytorch attention True
+Manual Execution Time:  0.017290592193603516 
+
+-----------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+                         Name    Self CPU %      Self CPU   CPU total %     CPU total  CPU time avg       CPU Mem  Self CPU Mem    # of Calls  
+-----------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+                  aten::clone         0.06%      11.000us         0.70%     121.000us      60.500us       1.00 Mb           0 b             2  
+                  aten::zeros         0.25%      43.000us         0.29%      51.000us      17.000us     548.00 Kb           0 b             3  
+                  aten::empty         0.05%       8.000us         0.05%       8.000us       2.000us     548.00 Kb     548.00 Kb             4  
+    STUDENT - FUSED ATTENTION        97.93%      16.949ms        99.83%      17.279ms      17.279ms     544.00 Kb      -1.00 Mb             1  
+              model_inference         0.17%      29.000us       100.00%      17.308ms      17.308ms     512.00 Kb     -32.00 Kb             1  
+                aten::flatten         0.27%      47.000us         0.83%     144.000us       0.279us     512.00 Kb           0 b           517  
+             aten::empty_like         0.02%       3.000us         0.02%       4.000us       4.000us     512.00 Kb     512.00 Kb             1  
+          aten::empty_strided         0.02%       3.000us         0.02%       3.000us       3.000us     512.00 Kb     512.00 Kb             1  
+                  aten::zero_         0.03%       6.000us         0.17%      30.000us      10.000us           0 b           0 b             3  
+                  aten::fill_         0.14%      24.000us         0.14%      24.000us      24.000us           0 b           0 b             1  
+-----------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+Self CPU time total: 17.308ms
+
+STUDENT - FUSED ATTENTION statistics
+cpu time:  17.279ms
+mem usage:  557056 bytes

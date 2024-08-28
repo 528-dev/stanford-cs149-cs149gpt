@@ -1,0 +1,65 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+Block	model.py	/^class Block(nn.Module):$/;"	c
+CausalSelfAttention	model.py	/^class CausalSelfAttention(nn.Module):$/;"	c
+CustomAttention	gpt149.py	/^class CustomAttention(nn.Module):$/;"	c
+GPT	model.py	/^class GPT(nn.Module):$/;"	c
+GPTConfig	model.py	/^class GPTConfig:$/;"	c
+LayerNorm	model.py	/^class LayerNorm(nn.Module):$/;"	c
+MLP	model.py	/^class MLP(nn.Module):$/;"	c
+NUM_THREADS	gpt149.py	/^NUM_THREADS=8$/;"	v
+NUM_THREADS	model.py	/^NUM_THREADS=8$/;"	v
+PYBIND11_MODULE	module.cpp	/^PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {$/;"	f
+__init__	gpt149.py	/^    def __init__(self, Q,K,V, B, H, N, d, isRef=False, bc=256, br=256):$/;"	m	class:CustomAttention
+__init__	model.py	/^    def __init__(self, config):$/;"	m	class:Block
+__init__	model.py	/^    def __init__(self, config):$/;"	m	class:CausalSelfAttention
+__init__	model.py	/^    def __init__(self, config):$/;"	m	class:GPT
+__init__	model.py	/^    def __init__(self, config):$/;"	m	class:MLP
+__init__	model.py	/^    def __init__(self, ndim, bias):$/;"	m	class:LayerNorm
+_init_weights	model.py	/^    def _init_weights(self, module):$/;"	m	class:GPT
+accessTest	gpt149.py	/^def accessTest(B, H, N, d):$/;"	f
+badSoftmax	gpt149.py	/^def badSoftmax(Q, K, V):$/;"	f
+configure_optimizers	model.py	/^    def configure_optimizers(self, weight_decay, learning_rate, betas, device_type):$/;"	m	class:GPT
+correctness_error_message	gpt149.py	/^correctness_error_message = "\\n-------------------------------------------\\n YOUR ATTENTION PRODUCED INCORRECT RESULTS"$/;"	v
+correctness_error_message	model.py	/^correctness_error_message = "\\n-------------------------------------------\\n YOUR ATTENTION PRODUCED INCORRECT RESULTS"$/;"	v
+createQKVSimple	gpt149.py	/^def createQKVSimple(N,d,B,H):$/;"	f
+crop_block_size	model.py	/^    def crop_block_size(self, block_size):$/;"	m	class:GPT
+estimate_mfu	model.py	/^    def estimate_mfu(self, fwdbwd_per_iter, dt):$/;"	m	class:GPT
+formatTensor	module.cpp	/^std::vector<float> formatTensor(torch::Tensor tensor) {$/;"	f
+forward	model.py	/^    def forward(self, idx, targets=None):$/;"	m	class:GPT
+forward	model.py	/^    def forward(self, input):$/;"	m	class:LayerNorm
+forward	model.py	/^    def forward(self, x):$/;"	m	class:Block
+forward	model.py	/^    def forward(self, x):$/;"	m	class:CausalSelfAttention
+forward	model.py	/^    def forward(self, x):$/;"	m	class:MLP
+fourDimRead	module.cpp	/^inline float fourDimRead(std::vector<float> &tensor, int &x, int &y, int &z, int &b, $/;"	f
+fourDimWrite	module.cpp	/^inline void fourDimWrite(std::vector<float> &tensor, int &x, int &y, int &z, int &b, $/;"	f
+from_pretrained	model.py	/^    def from_pretrained(cls, model_type, override_args=None):$/;"	m	class:GPT
+generate	model.py	/^    def generate(self, idx, max_new_tokens, decode, temperature=1.0, top_k=None):$/;"	m	class:GPT
+get_num_params	model.py	/^    def get_num_params(self, non_embedding=True):$/;"	m	class:GPT
+ispc_path	gpt149.py	/^ispc_path = getcwd() + "\/module_ispc.o"$/;"	v
+ispc_path	model.py	/^ispc_path = getcwd() + "\/module_ispc.o"$/;"	v
+main	gpt149.py	/^def main():$/;"	f
+mr	gpt149.py	/^mr = load(name="custom_module", sources=["module.cpp"],  extra_cflags=["-mavx", "-O3", "-fopenmp"], extra_ldflags=[ispc_path])$/;"	v
+ms	model.py	/^ms = load(name="custom_module", sources=["module.cpp"],  extra_cflags=["-mavx", "-O3", "-fopenmp"], extra_ldflags=[ispc_path])$/;"	v
+myFlashAttention	gpt149.py	/^    def myFlashAttention(self):$/;"	m	class:CustomAttention
+myFlashAttention	module.cpp	/^torch::Tensor myFlashAttention(torch::Tensor QTensor, torch::Tensor KTensor, torch::Tensor VTensor,$/;"	f
+myFusedAttention	gpt149.py	/^    def myFusedAttention(self):$/;"	m	class:CustomAttention
+myFusedAttention	module.cpp	/^torch::Tensor myFusedAttention(torch::Tensor QTensor, torch::Tensor KTensor, torch::Tensor VTensor, torch::Tensor temp,$/;"	f
+myNaiveAttention	module.cpp	/^torch::Tensor myNaiveAttention(torch::Tensor QTensor, torch::Tensor KTensor, torch::Tensor VTensor, torch::Tensor QK_tTensor,$/;"	f
+myUnfusedAttention	gpt149.py	/^    def myUnfusedAttention(self):$/;"	m	class:CustomAttention
+myUnfusedAttentionBlocked	gpt149.py	/^    def myUnfusedAttentionBlocked(self):$/;"	m	class:CustomAttention
+myUnfusedAttentionBlocked	module.cpp	/^torch::Tensor myUnfusedAttentionBlocked(torch::Tensor QTensor, torch::Tensor KTensor, torch::Tensor VTensor, torch::Tensor QK_tTensor,$/;"	f
+part0Test	gpt149.py	/^def part0Test(N, d, B, H):$/;"	f
+part1Test	gpt149.py	/^def part1Test(N, d, B, H):$/;"	f
+part2Test	gpt149.py	/^def part2Test(N, d, B, H):$/;"	f
+part3Test	gpt149.py	/^def part3Test(N, d, B, H):$/;"	f
+part4Test	gpt149.py	/^def part4Test(N, d, B, H, bc, br):$/;"	f
+run_sample	sample.py	/^def run_sample(N, out_dir, testname):$/;"	f
+test	gpt149.py	/^def test(Q,K,V):$/;"	f
+testTemplate	gpt149.py	/^def testTemplate(customFunc, params, test_key):$/;"	f
+twoDimRead	module.cpp	/^inline float twoDimRead(std::vector<float> &tensor, int &x, int &y, const int &sizeX) {$/;"	f
+twoDimWrite	module.cpp	/^inline void twoDimWrite(std::vector<float> &tensor, int &x, int &y, const int &sizeX, float &val) {$/;"	f

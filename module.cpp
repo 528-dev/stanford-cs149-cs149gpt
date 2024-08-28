@@ -5,6 +5,7 @@
 #include <sys/time.h>
 #include <vector>
 #include <immintrin.h>
+#include <cmath>
 
 // Uncomment for ISPC
 //#include "module_ispc.h"
@@ -27,12 +28,12 @@ inline void twoDimWrite(std::vector<float> &tensor, int &x, int &y, const int &s
 // Step #2: Implement Read/Write Accessors for a 4D Tensor
 inline float fourDimRead(std::vector<float> &tensor, int &x, int &y, int &z, int &b, 
         const int &sizeX, const int &sizeY, const int &sizeZ) {
-    return 0.0;
+    return tensor[x * (sizeX * sizeY * sizeZ) + y * (sizeY * sizeZ) + z * sizeZ + b];
 }
 
 inline void fourDimWrite(std::vector<float> &tensor, int &x, int &y, int &z, int &b, 
         const int &sizeX, const int &sizeY, const int &sizeZ, float &val) {
-    return; 
+    tensor[x * (sizeX * sizeY * sizeZ) + y * (sizeY * sizeZ) + z * sizeZ + b] = val;
 }
 
 // DO NOT EDIT THIS FUNCTION //
@@ -123,7 +124,51 @@ torch::Tensor myNaiveAttention(torch::Tensor QTensor, torch::Tensor KTensor, tor
     */
     
     // -------- YOUR CODE HERE  -------- //
-    
+
+    for (int b = 0; b < B; ++ b) {
+        for (int h = 0; h < H; ++ h) {
+            // caculate QK_t
+            for (int i = 0; i < N; ++ i) {
+                for (int j = 0; j < N; ++ j) {
+                    float val = 0.0;
+                    for (int k = 0; k < d; ++ k) {
+                        val += fourDimRead(Q, b, h, i, k, H, N, d) * fourDimRead(K, b, h, j, k, H, N, d);
+                    }
+                    twoDimWrite(QK_t, i, j, N, val);
+                }
+            } // end caculate  QK_t 
+
+            // normalize QK_t
+            for (int i = 0; i < N; ++ i) {
+                float mx = 0.0; 
+                for (int j = 0; j < N; ++ j) {
+                    mx = std::max(twoDimRead(QK_t, i, j, N), mx);
+                }
+                float sm = 0.0;
+                for (int j = 0; j < N; ++ j) {
+                    float val = exp(twoDimRead(QK_t, i, j, N) - mx);
+                    twoDimWrite(QK_t, i, j, N, val);
+                    sm += val;
+                }
+                for (int j = 0; j < N; ++ j) {
+                    float val = twoDimRead(QK_t, i, j, N) / sm;
+                    twoDimWrite(QK_t, i, j, N, val);
+                }
+            } // end normalize QK_t
+
+            // caculate O = QK_t * V 
+            for (int i = 0; i < N; ++ i) {
+                for (int j = 0; j < d; ++ j) {
+                    float val = 0.0;
+                    for (int k = 0; k < N; ++ k) {
+                        val += twoDimRead(QK_t, i, k, N) * fourDimRead(V, b, h, k, j, H, N, d);
+                    }
+                    fourDimWrite(O, b, h, i, j, H, N, d, val);
+                }
+            }// end caculate 0 = QK_t * V 
+        }
+    }
+
     // DO NOT EDIT THIS RETURN STATEMENT //
     // It formats your C++ Vector O back into a Tensor of Shape (B, H, N, d) and returns it //
     return torch::from_blob(O.data(), {B, H, N, d}, torch::TensorOptions().dtype(torch::kFloat32)).clone();
@@ -153,7 +198,117 @@ torch::Tensor myUnfusedAttentionBlocked(torch::Tensor QTensor, torch::Tensor KTe
     std::vector<float> QK_t = formatTensor(QK_tTensor);
 
     // -------- YOUR CODE HERE  -------- //
+#define L 16
+#ifdef L
+    for (int b = 0; b < B; ++ b) {
+        for (int h = 0; h < H; ++ h) {
+            // caculate QK_t
+            // a cache line is 64B, 16 floats 
+            for (int i = 0; i < N; i += L) {
+                for (int j = 0; j < N; j += L) {
+                    for (int k = 0; k < d; k += L) {
+                        int iibound = std::min(i + L, N); // very important for performance to preprocess bound
+                        int jjbound = std::min(j + L, N);
+                        int kkbound = std::min(k + L, d);
+                        for (int ii = i; ii < iibound; ++ ii) {
+                            for (int jj = j; jj < jjbound; ++ jj) {
+                                float val = twoDimRead(QK_t, ii, jj, N);
+                                for (int kk = k; kk < kkbound; ++ kk) {
+                                    val += fourDimRead(Q, b, h, ii, kk, H, N, d) * fourDimRead(K, b, h, jj, kk, H, N, d);
+                                }
+                                twoDimWrite(QK_t, ii, jj, N, val);
+                            }
+                        } 
+                    } 
+                }
+            }
+            // end caculate  QK_t 
 
+            // normalize QK_t
+            for (int i = 0; i < N; ++ i) {
+                float mx = 0.0; 
+                for (int j = 0; j < N; ++ j) {
+                    mx = std::max(twoDimRead(QK_t, i, j, N), mx);
+                }
+                float sm = 0.0;
+                for (int j = 0; j < N; ++ j) {
+                    float val = exp(twoDimRead(QK_t, i, j, N) - mx);
+                    twoDimWrite(QK_t, i, j, N, val);
+                    sm += val;
+                }
+                for (int j = 0; j < N; ++ j) {
+                    float val = twoDimRead(QK_t, i, j, N) / sm;
+                    twoDimWrite(QK_t, i, j, N, val);
+                }
+            } // end normalize QK_t
+
+            // caculate O = QK_t * V 
+            for (int i = 0; i < N; i += L) {
+                for (int j = 0; j < d; j += L) {
+                    for (int k = 0; k < N; k += L) {
+                        int iibound = std::min(i + L, N); // very important for performance to preprocess bound
+                        int jjbound = std::min(j + L, d);
+                        int kkbound = std::min(k + L, N);
+                        for (int ii = i; ii < iibound; ++ ii) {
+                            for (int jj = j; jj < jjbound; ++ jj) {
+                                float val = fourDimRead(O, b, h, ii, jj, H, N, d);
+                                for (int kk = k; kk < kkbound; ++ kk) {
+                                    val += twoDimRead(QK_t, ii, kk, N) * fourDimRead(V, b, h, kk, jj, H, N, d);
+                                }
+                                fourDimWrite(O, b, h, ii, jj, H, N, d, val);
+                            }
+                        }
+                    }
+                }
+            }// end caculate 0 = QK_t * V 
+        }
+    }
+#else
+    for (int b = 0; b < B; ++ b) {
+        for (int h = 0; h < H; ++ h) {
+            // caculate QK_t
+            for (int i = 0; i < N; ++ i) {
+                for (int j = 0; j < N; ++ j) {
+                    float val = 0.0;
+                    for (int k = 0; k < d; ++ k) {
+                        val += fourDimRead(Q, b, h, i, k, H, N, d) * fourDimRead(K, b, h, j, k, H, N, d);
+                    }
+                    twoDimWrite(QK_t, i, j, N, val);
+                }
+            } // end caculate  QK_t 
+
+            // normalize QK_t
+            for (int i = 0; i < N; ++ i) {
+                float mx = 0.0; 
+                for (int j = 0; j < N; ++ j) {
+                    mx = std::max(twoDimRead(QK_t, i, j, N), mx);
+                }
+                float sm = 0.0;
+                for (int j = 0; j < N; ++ j) {
+                    float val = exp(twoDimRead(QK_t, i, j, N) - mx);
+                    twoDimWrite(QK_t, i, j, N, val);
+                    sm += val;
+                }
+                for (int j = 0; j < N; ++ j) {
+                    float val = twoDimRead(QK_t, i, j, N) / sm;
+                    twoDimWrite(QK_t, i, j, N, val);
+                }
+            } // end normalize QK_t
+
+            // caculate O = QK_t * V 
+            for (int i = 0; i < N; ++ i) {
+                for (int j = 0; j < d; ++ j) {
+                    float val = 0.0;
+                    for (int k = 0; k < N; ++ k) {
+                        val += twoDimRead(QK_t, i, k, N) * fourDimRead(V, b, h, k, j, H, N, d);
+                    }
+                    fourDimWrite(O, b, h, i, j, H, N, d, val);
+                }
+            }// end caculate 0 = QK_t * V 
+        }
+    }
+#endif
+#undef L
     // DO NOT EDIT THIS RETURN STATEMENT //
     // It formats your C++ Vector O back into a Tensor of Shape (B, H, N, d) and returns it //
     return torch::from_blob(O.data(), {B, H, N, d}, torch::TensorOptions().dtype(torch::kFloat32)).clone();
@@ -187,22 +342,56 @@ torch::Tensor myFusedAttention(torch::Tensor QTensor, torch::Tensor KTensor, tor
 
     // -------- YOUR CODE HERE  -------- //
     // We give you a template of the first three loops for your convenience
+
+#pragma omp parallel for collapse(3) // raise race condition when using ORow
     //loop over batch
     for (int b = 0; b < B; b++){
-
         //loop over heads
         for (int h = 0; h < H; h++){
             for (int i = 0; i < N ; i++){
-
-		// YRow is moved inside so each OpenMP thread gets a local copy.
+            // caculate QK_t
+                // YRow is moved inside so each OpenMP thread gets a local copy.
                 at::Tensor ORowTensor = temp.index({torch::indexing::Slice(omp_get_thread_num(), torch::indexing::None)});      
                 std::vector<float> ORow = formatTensor(ORowTensor);
-		//YOUR CODE HERE
+                for (int j = 0; j < N; ++ j) {
+                    float val = 0.0;
+                    for (int k = 0; k < d; ++ k) {
+                        val += fourDimRead(Q, b, h, i, k, H, N, d) * fourDimRead(K, b, h, j, k, H, N, d);
+                    }
+                    ORow[j] = val; 
+                }
+            // end caculate  QK_t 
+
+            // normalize QK_t
+                float mx = 0.0; 
+                for (int j = 0; j < N; ++ j) {
+                    mx = std::max(ORow[j], mx);
+                }
+                float sm = 0.0;
+                for (int j = 0; j < N; ++ j) {
+                    float val = exp(ORow[j] - mx);
+                    ORow[j] = val;
+                    sm += val;
+                }
+                for (int j = 0; j < N; ++ j) {
+                    float val = ORow[j] / sm;
+                    ORow[j] = val;
+                }
+            // end normalize QK_t
+
+            // caculate O = QK_t * V 
+                for (int j = 0; j < d; ++ j) {
+                    float val = 0.0;
+                    for (int k = 0; k < N; ++ k) {
+                        val += ORow[k] * fourDimRead(V, b, h, k, j, H, N, d);
+                    }
+                    fourDimWrite(O, b, h, i, j, H, N, d, val);
+                }
+            // end caculate 0 = QK_t * V 
             }
-	}
+        }
     }
-	    
-	
+		//YOUR CODE HERE	    
     // DO NOT EDIT THIS RETURN STATEMENT //
     // It formats your C++ Vector O back into a Tensor of Shape (B, H, N, d) and returns it //
     return torch::from_blob(O.data(), {B, H, N, d}, torch::TensorOptions().dtype(torch::kFloat32)).clone();
